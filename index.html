@@ -903,57 +903,86 @@ function gameHash(card){
 function gamePattern(card){
   return new Promise(function(resolve){
     var DUR = 6000;
-    var html = '<p class="k">TEST 4/4 // SILICON PATTERN</p>' +
-      '<h3 class="ct">点出机器画的</h3>' +
-      '<p class="cs">6 秒。规整、对称、无抖动 = 机器。</p>' +
-      '<div class="grid9" id="grid9">';
-    CELLS.forEach(function(c, i){
-      html += '<button class="cell" type="button" data-i="' + i + '" aria-label="图形 ' + (i+1) + '">' +
-        '<svg viewBox="0 0 100 100" aria-hidden="true">' + c.svg + '</svg></button>';
-    });
-    html += '</div>' +
-      '<button class="btn ghost" id="g4-submit" type="button" style="width:100%">选好了 · 提交</button>';
-    card.innerHTML = html;
-    var t = makeTimer(card);
-    t.fill.style.transform = 'scaleX(1)';
-
-    var grid = $('#grid9');
     var picked = new Set();
-    var t0 = performance.now(), done = false, raf = 0;
+    var started = false, done = false, raf = 0, t0 = 0, timer = null, grid = null;
+
+    /* ---- 第一屏：先把规则讲清楚，玩家点「准备好了」才开始计时 ---- */
+    card.innerHTML =
+      '<p class="k">TEST 4/4 // SILICON PATTERN</p>' +
+      '<h3 class="ct">点出机器画的</h3>' +
+      '<p class="cs">下面 9 个图形里，<b>5 个是机器画的</b>，<b>4 个是人画的</b>。</p>' +
+      '<p class="cs" style="color:var(--mid); margin-top:10px; line-height:1.9">' +
+        '机器画的：<b style="color:var(--green)">完美对称 · 线条均匀 · 间距一致 · 无抖动</b><br>' +
+        '人画的：<b style="color:var(--amber)">线条歪斜 · 手绘抖动 · 不对称 · 间距不齐</b>' +
+      '</p>' +
+      '<p class="cs" style="color:var(--dim); margin-top:10px">限时 <b>6 秒</b>。点击选中，选好了点「提交」。计时从你点下面的按钮才开始。</p>' +
+      '<button class="btn" id="g4-ready" type="button" style="width:100%; margin-top:18px">准备好了 · 开始计时</button>';
+
+    var readyBtn = $('#g4-ready');
+    if(readyBtn) readyBtn.addEventListener('click', begin);
+
+    var onKey = function(e){
+      if(e.key !== 'Enter' && e.key !== ' ') return;
+      if(!started){ e.preventDefault(); begin(); }
+      else if(!done){ e.preventDefault(); finish(); }
+    };
+    window.addEventListener('keydown', onKey);
+
+    function begin(){
+      if(started) return;
+      started = true;
+      SFX.start();
+
+      var html = '<p class="k">TEST 4/4 // SILICON PATTERN</p>' +
+        '<h3 class="ct">点出机器画的</h3>' +
+        '<p class="cs">5 个机器 · 4 个人 · 6 秒</p>' +
+        '<div class="grid9" id="grid9">';
+      CELLS.forEach(function(c, i){
+        html += '<button class="cell" type="button" data-i="' + i + '" aria-label="图形 ' + (i+1) + '">' +
+          '<svg viewBox="0 0 100 100" aria-hidden="true">' + c.svg + '</svg></button>';
+      });
+      html += '</div>' +
+        '<button class="btn ghost" id="g4-submit" type="button" style="width:100%">选好了 · 提交</button>';
+      card.innerHTML = html;
+
+      timer = makeTimer(card);
+      timer.fill.style.transform = 'scaleX(1)';
+      grid = $('#grid9');
+      t0 = performance.now();
+
+      grid.addEventListener('click', function(e){
+        var cell = e.target.closest ? e.target.closest('.cell') : null;
+        if(!cell || done) return;
+        var i = Number(cell.dataset.i);
+        if(picked.has(i)){ picked.delete(i); cell.classList.remove('sel'); SFX.unselect(); }
+        else{ picked.add(i); cell.classList.add('sel'); SFX.pick(); }
+      });
+
+      var sub = $('#g4-submit');
+      if(sub) sub.addEventListener('click', function(e){ e.preventDefault(); finish(); });
+
+      raf = requestAnimationFrame(tick);
+    }
 
     function tick(){
-      if(done) return;
+      if(done || !timer) return;
       var left = clamp(1 - (performance.now() - t0)/DUR, 0, 1);
-      t.fill.style.transform = 'scaleX(' + left + ')';
-      t.wrap.classList.toggle('low', left < 0.3);
+      timer.fill.style.transform = 'scaleX(' + left + ')';
+      timer.wrap.classList.toggle('low', left < 0.3);
       if(left <= 0){ finish(); return; }
       raf = requestAnimationFrame(tick);
     }
-    raf = requestAnimationFrame(tick);
-    SFX.start();
-
-    grid.addEventListener('click', function(e){
-      var cell = e.target.closest ? e.target.closest('.cell') : null;
-      if(!cell || done) return;
-      var i = Number(cell.dataset.i);
-      if(picked.has(i)){ picked.delete(i); cell.classList.remove('sel'); SFX.unselect(); }
-      else{ picked.add(i); cell.classList.add('sel'); SFX.pick(); }
-    });
-
-    var sub = $('#g4-submit');
-    if(sub){
-      sub.addEventListener('click', function(e){ e.preventDefault(); finish(); });
-      window.addEventListener('keydown', function(e){ if(e.key === 'Enter') finish(); });
-    }
 
     function finish(){
-      if(done) return;
+      if(done || !grid) return;
       done = true;
       cancelAnimationFrame(raf);
+      window.removeEventListener('keydown', onKey);
       var hits = 0, fp = 0;
       CELLS.forEach(function(c, i){
         var sel = picked.has(i);
         var cell = grid.children[i];
+        if(!cell) return;
         cell.classList.add('locked');
         if(c.ai && sel) hits++;
         if(!c.ai && sel){ fp++; cell.classList.add('wrong'); cell.classList.add('reveal-human'); }
