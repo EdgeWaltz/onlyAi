@@ -10,17 +10,16 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="AGENT BOT">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:url" content="https://edgewaltz.github.io/onlyAi/">
 <meta property="og:title" content="AGENT BOT // 硅基白名单核验">
 <meta property="og:description" content="反向人机验证：证明你不是人类。4 项机能小游戏，约 40 秒测出你的大脑含AI量，并领取专属 Agent ID。">
-<meta property="og:image" content="https://edgewaltz.github.io/onlyAi/og.png">
+<meta property="og:image" content="https://only-ai.pages.dev/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="AGENT BOT 硅基白名单核验">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="AGENT BOT // 硅基白名单核验">
 <meta name="twitter:description" content="反向人机验证：证明你不是人类。4 项机能小游戏，约 40 秒测出你的大脑含AI量。">
-<meta name="twitter:image" content="https://edgewaltz.github.io/onlyAi/og.png">
+<meta name="twitter:image" content="https://only-ai.pages.dev/og.png">
 <style>
 /* ============================================================
    AGENT BOT // 硅基白名单核验  ·  单文件 · 零外部依赖
@@ -441,6 +440,49 @@ var $  = function(s,r){ return (r||document).querySelector(s); };
 var $$ = function(s,r){ return Array.prototype.slice.call((r||document).querySelectorAll(s)); };
 var clamp = function(v,a,b){ return Math.max(a, Math.min(b, v)); };
 var pad = function(n,l){ return String(n).padStart(l||2,'0'); };
+/* ---------- 访问统计（可选启用） ----------
+   把 siteId 填上就会加载对应统计脚本；留空则完全静默，
+   不发任何请求，也不影响离线使用。
+   provider: 'umami' | 'ga4' | 'baidu'
+   umami: https://cloud.umami.is → Add website → 复制 Website ID
+   ga4  : G-XXXXXXXXXX      baidu: 百度统计里 hm.js? 后面的那串         */
+var ANALYTICS = { provider:'umami', siteId:'' };
+var _statLoaded = false;
+
+function loadStats(){
+  if(_statLoaded || !ANALYTICS.siteId) return;
+  _statLoaded = true;
+  var s = document.createElement('script');
+  s.defer = true;
+  if(ANALYTICS.provider === 'ga4'){
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + ANALYTICS.siteId;
+    s.onload = function(){
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function(){ window.dataLayer.push(arguments); };
+      window.gtag('js', new Date());
+      window.gtag('config', ANALYTICS.siteId, { anonymize_ip:true });
+    };
+  }else if(ANALYTICS.provider === 'baidu'){
+    s.src = 'https://hm.baidu.com/hm.js?' + ANALYTICS.siteId;
+  }else{
+    s.src = 'https://cloud.umami.is/script.js';
+    s.setAttribute('data-website-id', ANALYTICS.siteId);
+  }
+  document.head.appendChild(s);
+}
+
+function track(name, data){
+  try{
+    if(window.umami && typeof window.umami.track === 'function'){
+      data ? window.umami.track(name, data) : window.umami.track(name);
+    }else if(typeof window.gtag === 'function'){
+      window.gtag('event', name, data || {});
+    }else if(window._hmt && window._hmt.push){
+      window._hmt.push(['_trackEvent', name, data ? JSON.stringify(data) : '']);
+    }
+  }catch(e){}
+}
+
 var wait = function(ms){ return new Promise(function(r){ setTimeout(r, ms); }); };
 var reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 var randInt = function(a,b){ return Math.floor(a + Math.random()*(b - a + 1)); };
@@ -955,6 +997,7 @@ async function startTest(){
   state.result = null;
   state.busy = true;
   SFX.init(); SFX.start();
+  track('test_start');
 
   showView('test');
   for(var i=0;i<GAME_META.length;i++){
@@ -984,6 +1027,7 @@ function submitRegister(){
   if(!state.result) state.result = computeResult();
   var el = $('#codename');
   state.codename = el ? (el.value || '').trim().slice(0,16) : '';
+  track('agent_claim', { code: state.codename || 'AGENT-001', pct: state.result.pct });
   SFX.done();
   showView('result');
   renderResult(state.result);
@@ -1018,6 +1062,7 @@ function runAnalyze(){
       fill.style.width = '100%';
       setTimeout(function(){
         state.result = computeResult();
+        track('test_finish', { pct: state.result.pct, tier: TIERS[state.result.tier].name, code: state.codename || 'AGENT-001' });
         showView('register');
         var cn = $('#codename');
         if(cn){ cn.value = ''; try{ cn.focus(); }catch(e){} }
@@ -1252,7 +1297,7 @@ function showFallback(text){
 function copyDossier(){
   if(!state.result) return;
   var text = buildDossier(state.result);
-  function done(){ toast('战报已复制到剪贴板'); SFX.done(); }
+  function done(){ toast('战报已复制到剪贴板'); track('share_copy', { pct: state.result.pct }); SFX.done(); }
   if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(text).then(done).catch(function(){
       if(legacyCopy(text)) done(); else showFallback(text);
@@ -1400,6 +1445,7 @@ function exportPNG(){
   a.click();
   document.body.removeChild(a);
   toast('工牌已导出 PNG');
+  track('export_png', { pct: r.pct });
   SFX.done();
 }
 
@@ -1438,6 +1484,7 @@ function reset(){
 }
 
 function init(){
+  loadStats();
   startClock();
   bindSound();
   bindTilt();
@@ -1465,6 +1512,13 @@ function init(){
   };
   window.addEventListener('pointerdown', unlock);
   window.addEventListener('keydown', unlock);
+
+  // 中途离开（还没做完 4 关）记一次中断，用来算完成率
+  window.addEventListener('pagehide', function(){
+    if(state.view === 'test' && state.scores.indexOf(null) !== -1){
+      track('test_abort', { step: (state.idx || 0) + 1 });
+    }
+  });
 }
 
 if(document.readyState === 'loading'){
