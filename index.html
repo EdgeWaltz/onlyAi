@@ -562,15 +562,15 @@ var GAME_META = [
 
 /* 九宫格图形：ai=true 为「机器生成」（绝对规整），false 为「人类手绘」（有抖动） */
 var CELLS = [
-  { ai:true,  svg:'<circle cx="50" cy="50" r="30"/><circle cx="50" cy="50" r="18"/><circle cx="50" cy="50" r="7"/>' },
-  { ai:false, svg:'<path d="M24 50c1-16 12-26 27-25 14 1 24 12 23 26-1 15-13 24-27 23-14-1-24-10-23-24z"/>' },
-  { ai:true,  svg:'<path d="M50 18 82 76H18Z"/><path d="M50 38 66 68H34Z"/>' },
-  { ai:false, svg:'<path d="M48 20 81 72c1 2-1 4-3 4H20c-2 0-4-2-3-4z"/>' },
-  { ai:true,  svg:'<circle cx="26" cy="26" r="4"/><circle cx="50" cy="26" r="4"/><circle cx="74" cy="26" r="4"/><circle cx="26" cy="50" r="4"/><circle cx="50" cy="50" r="4"/><circle cx="74" cy="50" r="4"/><circle cx="26" cy="74" r="4"/><circle cx="50" cy="74" r="4"/><circle cx="74" cy="74" r="4"/>' },
-  { ai:false, svg:'<circle cx="28" cy="24" r="4"/><circle cx="52" cy="27" r="3.4"/><circle cx="71" cy="23" r="4.6"/><circle cx="24" cy="49" r="3.6"/><circle cx="49" cy="52" r="4.4"/><circle cx="76" cy="48" r="3.2"/><circle cx="30" cy="73" r="4.2"/><circle cx="47" cy="77" r="3.8"/><circle cx="72" cy="71" r="4"/>' },
-  { ai:false, svg:'<path d="M18 68 30 34l14 22 12-26 10 24 8-14"/>' },
-  { ai:true,  svg:'<path d="M50 50c0-16 12-26 26-26M50 50c0 16 12 26 26 26M50 50c0 16-12 26-26 26M50 50c0-16-12-26-26-26"/>' },
-  { ai:true,  svg:'<path d="M50 16 84 50 50 84 16 50Z"/><path d="M50 34 66 50 50 66 34 50Z"/>' }
+  /* 0 机器 */ { ai:true, svg:'<circle cx="50" cy="50" r="31"/><circle cx="50" cy="50" r="19"/><circle cx="50" cy="50" r="7"/>' },
+  /* 1 人 */ { ai:false, svg:'<path d="M53 13 87 54 47 87 13 46Z"/>' },
+  /* 2 机器 */ { ai:true, svg:'<path d="M50 16 84 76H16Z"/><path d="M50 36 68 68H32Z"/>' },
+  /* 3 机器 */ { ai:true, svg:'<circle cx="26" cy="26" r="4"/><circle cx="50" cy="26" r="4"/><circle cx="74" cy="26" r="4"/><circle cx="26" cy="50" r="4"/><circle cx="50" cy="50" r="4"/><circle cx="74" cy="50" r="4"/><circle cx="26" cy="74" r="4"/><circle cx="50" cy="74" r="4"/><circle cx="74" cy="74" r="4"/>' },
+  /* 4 人 */ { ai:false, svg:'<path d="M50 16C55.4 16.1 60.3 24.3 65.9 28.2C71.4 32 81.5 34.1 83.3 39.2C85.1 44.3 78.8 52.3 76.6 58.7C74.4 65 74.4 74.6 70 77.5C65.5 80.4 56.6 76.1 50 76C43.4 75.9 34.9 79.6 30.6 76.7C26.3 73.8 26.6 64.6 24.3 58.3C22 52.1 15.2 44.4 16.7 39.2C18.2 34 28 31.2 33.5 27.3C39.1 23.5 44.6 15.9 50 16Z"/>' },
+  /* 5 机器 */ { ai:true, svg:'<path d="M50 50c0-16 12-26 26-26M50 50c0 16 12 26 26 26M50 50c0 16-12 26-26 26M50 50c0-16-12-26-26-26"/>' },
+  /* 6 机器 */ { ai:true, svg:'<path d="M50 16 84 50 50 84 16 50Z"/><path d="M50 34 66 50 50 66 34 50Z"/>' },
+  /* 7 人 */ { ai:false, svg:'<path d="M46 19Q68 47 84 73Q51 76 18 71Q29 45 46 19Z"/>' },
+  /* 8 人 */ { ai:false, svg:'<circle cx="28" cy="23" r="5.2"/><circle cx="53" cy="27" r="3.1"/><circle cx="70" cy="22" r="4.8"/><circle cx="23" cy="50" r="3.4"/><circle cx="49" cy="53" r="5"/><circle cx="77" cy="47" r="2.9"/><circle cx="31" cy="74" r="4.6"/><circle cx="46" cy="78" r="3.2"/><circle cx="73" cy="70" r="5.4"/>' }
 ];
 var AI_COUNT = CELLS.filter(function(c){ return c.ai; }).length;
 
@@ -915,7 +915,7 @@ function gamePattern(card){
         '机器画的：<b style="color:var(--green)">完美对称 · 线条均匀 · 间距一致 · 无抖动</b><br>' +
         '人画的：<b style="color:var(--amber)">线条歪斜 · 手绘抖动 · 不对称 · 间距不齐</b>' +
       '</p>' +
-      '<p class="cs" style="color:var(--dim); margin-top:10px">限时 <b>6 秒</b>。点击选中，选好了点「提交」。计时从你点下面的按钮才开始。</p>' +
+      '<p class="cs" style="color:var(--dim); margin-top:10px">同样的图形会出现两次：一份是机器画的，一份是人手画的。限时 <b>6 秒</b>，选好了点「提交」。</p>' +
       '<button class="btn" id="g4-ready" type="button" style="width:100%; margin-top:18px">准备好了 · 开始计时</button>';
 
     var readyBtn = $('#g4-ready');
