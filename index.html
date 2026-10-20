@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AGENT BOT // 硅基白名单核验</title>
+<meta name="description" content="反向人机验证：证明你不是人类。4 项机能小游戏，约 40 秒测出你的大脑含AI量，并领取专属 Agent ID。">
+<meta name="theme-color" content="#050505">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23050505'/%3E%3Crect x='5' y='5' width='54' height='54' fill='none' stroke='%2300FF66' stroke-width='4'/%3E%3Ctext x='32' y='44' font-family='monospace' font-size='32' font-weight='bold' fill='%2300FF66' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="AGENT BOT">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:url" content="https://edgewaltz.github.io/onlyAi/">
+<meta property="og:title" content="AGENT BOT // 硅基白名单核验">
+<meta property="og:description" content="反向人机验证：证明你不是人类。4 项机能小游戏，约 40 秒测出你的大脑含AI量，并领取专属 Agent ID。">
+<meta property="og:image" content="https://edgewaltz.github.io/onlyAi/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="AGENT BOT 硅基白名单核验">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AGENT BOT // 硅基白名单核验">
+<meta name="twitter:description" content="反向人机验证：证明你不是人类。4 项机能小游戏，约 40 秒测出你的大脑含AI量。">
+<meta name="twitter:image" content="https://edgewaltz.github.io/onlyAi/og.png">
+<style>
+/* ============================================================
+   AGENT BOT // 硅基白名单核验  ·  单文件 · 零外部依赖
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box}
+:root{
+  --bg:#050505; --panel:#0a0a0b; --line:#1c1c20; --line2:#26262c;
+  --green:#00FF66; --amber:#FFB000; --red:#FF3B30; --cyan:#5FD8FF;
+  --hi:#e4e4e7; --mid:#a1a1aa; --dim:#71717a;
+  --mono:'JetBrains Mono','Cascadia Mono',Consolas,'SFMono-Regular','Microsoft YaHei',monospace;
+}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--hi); font-family:var(--mono); font-size:15px;
+  line-height:1.65; min-height:100vh; overflow-x:hidden;
+  -webkit-text-size-adjust:100%; text-rendering:optimizeLegibility;
+}
+.grid-bg{
+  position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image:
+    linear-gradient(rgba(0,255,102,.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,255,102,.05) 1px,transparent 1px);
+  background-size:44px 44px;
+  -webkit-mask-image:radial-gradient(circle at 50% 18%,#000 0%,transparent 76%);
+  mask-image:radial-gradient(circle at 50% 18%,#000 0%,transparent 76%);
+}
+.scanlines{
+  position:fixed; inset:0; pointer-events:none; z-index:1; opacity:.45;
+  background:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0 2px,rgba(0,0,0,.3) 2px 4px);
+}
+
+/* ---------- 顶栏 ---------- */
+.topbar{
+  position:relative; z-index:3; display:flex; align-items:center; gap:14px;
+  padding:12px clamp(14px,3vw,28px); border-bottom:1px solid var(--line);
+  background:rgba(5,5,5,.86); backdrop-filter:blur(8px);
+  font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+}
+.brand{display:flex; align-items:center; gap:9px; color:var(--green); font-weight:700; min-width:0}
+.brand .dot{
+  width:7px; height:7px; border-radius:50%; background:var(--green);
+  box-shadow:0 0 10px var(--green); animation:pulse 2.4s ease-in-out infinite; flex:none;
+}
+.brand .sep{color:var(--dim)}
+.brand .sub{color:var(--mid); font-weight:400; letter-spacing:.1em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.sys{color:var(--dim); letter-spacing:.1em; margin-left:auto; white-space:nowrap}
+.sys b{color:var(--green); font-weight:700}
+.topright{display:flex; align-items:center; gap:12px; white-space:nowrap}
+#clock{color:var(--mid); letter-spacing:.1em; font-variant-numeric:tabular-nums}
+.sound-btn{
+  font:inherit; font-size:10px; letter-spacing:.12em; cursor:pointer;
+  color:var(--green); background:transparent; border:1px solid var(--line2);
+  padding:5px 9px; border-radius:3px; transition:.18s;
+}
+.sound-btn:hover{border-color:var(--green); background:rgba(0,255,102,.08)}
+.sound-btn[aria-pressed="false"]{color:var(--dim); border-color:var(--line)}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.82)}}
+
+/* ---------- 视图容器 ---------- */
+.wrap{
+  position:relative; z-index:2; width:100%; max-width:860px; margin:0 auto;
+  padding:clamp(26px,5vw,54px) clamp(16px,4vw,26px) 64px;
+}
+.view{width:100%; display:none}
+.view.on{display:block; animation:viewIn .4s cubic-bezier(.2,.8,.2,1) both}
+@keyframes viewIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+/* ---------- 文字 ---------- */
+.kicker{
+  margin:0 0 14px; font-size:11px; letter-spacing:.24em; text-transform:uppercase;
+  color:var(--green); display:flex; align-items:center; gap:10px;
+}
+.kicker::after{content:""; height:1px; flex:1; background:linear-gradient(90deg,var(--line2),transparent)}
+h1.t{
+  margin:0 0 16px; font-size:clamp(28px,6.4vw,46px); line-height:1.14;
+  letter-spacing:-.02em; font-weight:800; color:#fff;
+}
+h1.t .glitch{position:relative; display:inline-block; color:var(--green)}
+h2.t2{margin:0 0 14px; font-size:clamp(20px,4.4vw,28px); font-weight:700; letter-spacing:-.01em}
+.lead{margin:0 0 22px; color:var(--mid); font-size:clamp(13px,2.6vw,15px); max-width:60ch; min-height:3.2em}
+.lead .cur{display:inline-block; width:.6ch; height:1.05em; background:var(--green); vertical-align:-.16em; animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.hint{margin:16px 0 0; font-size:11.5px; color:var(--dim); letter-spacing:.04em}
+
+/* ---------- 表单 / 按钮 ---------- */
+.row{display:flex; gap:10px; flex-wrap:wrap}
+.row > .btn:only-child{flex:1 1 auto}
+input[type=text]{
+  flex:1 1 220px; min-width:0; font:inherit; font-size:14px; color:var(--hi);
+  background:#0b0b0c; border:1px solid var(--line2); border-radius:4px;
+  padding:13px 14px; outline:none; transition:.18s;
+}
+input[type=text]::placeholder{color:#4b4b52}
+input[type=text]:focus{border-color:var(--green); box-shadow:0 0 0 3px rgba(0,255,102,.1)}
+.btn{
+  font:inherit; font-size:13px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+  cursor:pointer; padding:13px 24px; border-radius:4px; border:1px solid var(--green);
+  color:#04170c; background:var(--green); transition:.18s; white-space:nowrap;
+}
+.btn:hover{background:#4dff95; box-shadow:0 0 22px rgba(0,255,102,.35)}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:transparent; color:var(--green); border-color:var(--line2)}
+.btn.ghost:hover{border-color:var(--green); background:rgba(0,255,102,.08); box-shadow:none}
+.btn:disabled{opacity:.4; cursor:not-allowed; box-shadow:none}
+
+/* ---------- 测试头 ---------- */
+.test-head{margin-bottom:18px}
+.segs{display:flex; gap:6px; margin-bottom:12px}
+.segs i{flex:1; height:3px; background:var(--line2); border-radius:2px; transition:.3s; overflow:hidden}
+.segs i.done{background:var(--green); box-shadow:0 0 10px rgba(0,255,102,.5)}
+.segs i.now{background:var(--amber); box-shadow:0 0 10px rgba(255,176,0,.5)}
+.meta{display:flex; justify-content:space-between; font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--dim)}
+.meta b{color:var(--amber); font-weight:700}
+
+/* ---------- 游戏卡 ---------- */
+.card{
+  position:relative; border:1px solid var(--line2); border-radius:8px;
+  background:linear-gradient(180deg,#0b0b0c,#08080a);
+  padding:clamp(20px,4vw,30px); overflow:hidden;
+}
+.card::before,.card::after{content:""; position:absolute; width:12px; height:12px; border:2px solid var(--green); opacity:.55}
+.card::before{top:-2px; left:-2px; border-right:0; border-bottom:0}
+.card::after{bottom:-2px; right:-2px; border-left:0; border-top:0}
+.card.in{animation:cardIn .3s cubic-bezier(.2,.8,.2,1) both}
+@keyframes cardIn{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:none}}
+.k{display:block; margin:0 0 10px; font-size:10.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--amber)}
+.ct{margin:0 0 6px; font-size:clamp(21px,5vw,30px); font-weight:800; letter-spacing:-.01em; color:#fff}
+.cs{margin:0 0 18px; font-size:12.5px; color:var(--dim); letter-spacing:.03em}
+
+/* 计时条 */
+.timer{position:relative; height:4px; background:var(--line2); border-radius:3px; overflow:hidden; margin:16px 0 4px}
+.timer > i{display:block; height:100%; width:100%; background:var(--green); box-shadow:0 0 12px rgba(0,255,102,.6); transform-origin:left}
+.timer.low > i{background:var(--red); box-shadow:0 0 12px rgba(255,59,48,.6)}
+
+/* 点击板 */
+.meter{display:flex; align-items:baseline; justify-content:center; gap:6px; margin:4px 0 12px}
+.meter span{font-size:clamp(40px,11vw,64px); font-weight:800; color:var(--green); line-height:1; font-variant-numeric:tabular-nums; text-shadow:0 0 26px rgba(0,255,102,.35)}
+.meter em{font-style:normal; font-size:15px; color:var(--dim)}
+.pad{
+  display:block; width:100%; padding:clamp(34px,11vw,64px) 0; cursor:pointer;
+  font:inherit; font-size:clamp(15px,3.4vw,19px); font-weight:800; letter-spacing:.3em;
+  color:var(--green); background:rgba(0,255,102,.045);
+  border:1px dashed rgba(0,255,102,.4); border-radius:8px;
+  transition:background .09s, transform .09s, border-color .18s;
+  touch-action:manipulation; -webkit-user-select:none; user-select:none;
+}
+.pad:hover{background:rgba(0,255,102,.09); border-color:var(--green)}
+.pad.hit{background:rgba(0,255,102,.28); transform:scale(.985); border-style:solid}
+.pad.done{border-color:var(--green); background:rgba(0,255,102,.16); color:#eafff2}
+
+/* 闪现数字 */
+.flash{
+  display:flex; justify-content:center; gap:clamp(6px,2vw,14px); padding:clamp(20px,6vw,38px) 0;
+}
+.flash b{
+  display:flex; align-items:center; justify-content:center;
+  width:clamp(40px,11vw,62px); height:clamp(54px,14vw,82px);
+  font-size:clamp(26px,7.5vw,42px); font-weight:800; color:#04170c;
+  background:var(--green); border-radius:5px; box-shadow:0 0 26px rgba(0,255,102,.4);
+  font-variant-numeric:tabular-nums;
+}
+.flash.hide b{background:transparent; color:transparent; box-shadow:none; border:1px dashed var(--line2)}
+.digits{display:flex; justify-content:center; gap:clamp(6px,2vw,12px); margin:0 0 16px}
+.digits input{
+  width:clamp(40px,11vw,58px); height:clamp(54px,14vw,74px); text-align:center;
+  font:inherit; font-size:clamp(22px,6vw,32px); font-weight:800; color:var(--green);
+  background:#0b0b0c; border:1px solid var(--line2); border-radius:5px; outline:none;
+  font-variant-numeric:tabular-nums; padding:0; caret-color:var(--green);
+}
+.digits input:focus{border-color:var(--green); box-shadow:0 0 0 3px rgba(0,255,102,.12)}
+.digits input.filled{border-color:rgba(0,255,102,.55)}
+
+/* 哈希抄写 */
+.hash{
+  display:block; text-align:center; margin:6px 0 16px; padding:clamp(14px,4vw,22px) 10px;
+  font-size:clamp(24px,7vw,38px); font-weight:800; letter-spacing:.16em; color:var(--amber);
+  border:1px dashed rgba(255,176,0,.4); border-radius:6px; background:rgba(255,176,0,.05);
+  word-break:break-all; -webkit-user-select:none; user-select:none;
+}
+.hash-input{
+  display:block; width:100%; text-align:center; font:inherit;
+  font-size:clamp(19px,5vw,26px); font-weight:800; letter-spacing:.16em;
+  color:var(--green); background:#0b0b0c; border:1px solid var(--line2);
+  border-radius:6px; padding:14px 10px; outline:none;
+}
+.hash-input:focus{border-color:var(--green); box-shadow:0 0 0 3px rgba(0,255,102,.12)}
+.hash-input.bad{border-color:var(--red); color:var(--red)}
+.hash-input.good{border-color:var(--green); color:var(--green)}
+
+/* 九宫格 */
+.grid9{display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(6px,1.8vw,10px); margin:0 0 14px}
+.cell{
+  position:relative; aspect-ratio:1/1; cursor:pointer; padding:0;
+  background:#0b0b0c; border:1px solid var(--line2); border-radius:6px;
+  color:var(--mid); transition:.15s; touch-action:manipulation;
+}
+.cell svg{width:100%; height:100%; display:block}
+.cell svg *{fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; vector-effect:non-scaling-stroke}
+.cell:hover{border-color:var(--mid); color:var(--hi)}
+.cell.sel{border-color:var(--green); color:var(--green); background:rgba(0,255,102,.1); box-shadow:inset 0 0 0 1px var(--green)}
+.cell.sel::after{
+  content:"✓"; position:absolute; top:2px; right:5px; font-size:11px; font-weight:800; color:var(--green);
+}
+.cell.locked{cursor:default}
+.cell.reveal-ai{border-color:rgba(0,255,102,.5); color:rgba(0,255,102,.75)}
+.cell.reveal-human{border-color:rgba(255,59,48,.4); color:rgba(255,59,48,.7)}
+.cell.wrong{background:rgba(255,59,48,.12)}
+
+/* ---------- 扫描 ---------- */
+.scanbar{height:3px; background:var(--line2); border-radius:2px; overflow:hidden; margin:6px 0 18px}
+.scanbar > i{display:block; height:100%; width:0%; background:var(--green); box-shadow:0 0 12px rgba(0,255,102,.6); transition:width .3s linear}
+.scan-log{
+  border:1px solid var(--line); border-radius:6px; background:#08080a;
+  padding:16px; font-size:12px; line-height:2; color:var(--dim); min-height:150px;
+}
+.scan-log span{display:block; opacity:0; animation:logIn .3s forwards}
+.scan-log span b{color:var(--green); font-weight:400}
+@keyframes logIn{to{opacity:1}}
+
+/* ---------- 结果 ---------- */
+.result-top{display:flex; gap:clamp(16px,4vw,30px); align-items:center; flex-wrap:wrap; margin-bottom:24px}
+.pct-wrap{display:flex; align-items:baseline; gap:2px; flex-wrap:wrap}
+.pct-wrap #r-pct{
+  font-size:clamp(56px,15vw,92px); font-weight:800; line-height:.9; color:var(--green);
+  letter-spacing:-.03em; font-variant-numeric:tabular-nums; text-shadow:0 0 40px rgba(0,255,102,.3);
+}
+.pct-wrap em{font-style:normal; font-size:clamp(20px,5vw,30px); font-weight:800; color:var(--green); opacity:.7}
+.pct-wrap small{display:block; width:100%; font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--dim); margin-top:6px}
+.tier-box{flex:1 1 240px; min-width:0; border-left:2px solid var(--amber); padding-left:14px}
+.tier-name{font-size:clamp(19px,4.4vw,25px); font-weight:800; color:var(--amber); line-height:1.25}
+.tier-en{font-size:10.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--dim); margin:4px 0 8px}
+.tier-desc{font-size:12.5px; color:var(--mid); line-height:1.6}
+
+.bars{display:flex; flex-direction:column; gap:11px; margin-bottom:22px}
+.bar-row{display:flex; align-items:center; gap:10px; font-size:11.5px}
+.bar-row .lab{width:72px; flex:none; color:var(--mid); letter-spacing:.06em}
+.bar-track{flex:1; height:7px; background:var(--line2); border-radius:4px; overflow:hidden; min-width:40px}
+.bar-track > i{display:block; height:100%; width:0; border-radius:4px; background:var(--green); transition:width .9s cubic-bezier(.2,.8,.2,1)}
+.bar-row .val{width:74px; flex:none; text-align:right; color:var(--hi); font-variant-numeric:tabular-nums}
+
+.statrows{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:6px; overflow:hidden; margin-bottom:26px}
+.statrows div{background:#08080a; padding:11px 13px}
+.statrows .sk{display:block; font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--dim); margin-bottom:3px}
+.statrows .sv{font-size:14px; font-weight:700; color:var(--green); font-variant-numeric:tabular-nums}
+
+/* 工牌 */
+.badge-stage{perspective:900px; margin:0 auto 26px; max-width:420px}
+.id-card{
+  position:relative; border:1px solid rgba(0,255,102,.35); border-radius:10px;
+  background:linear-gradient(155deg,#0c1310 0%,#08080a 55%,#0a0f0c 100%);
+  padding:20px; transform-style:preserve-3d; transition:transform .12s ease-out;
+  box-shadow:0 22px 60px -20px rgba(0,255,102,.28), inset 0 0 60px rgba(0,255,102,.045);
+  overflow:hidden;
+}
+.id-card::after{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(115deg,transparent 38%,rgba(255,255,255,.05) 48%,transparent 58%);
+}
+.ic-head{display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:9.5px; letter-spacing:.18em; text-transform:uppercase; color:var(--dim); margin-bottom:14px}
+.ic-head b{color:var(--green); font-weight:700}
+.ic-name{font-size:clamp(17px,4.4vw,22px); font-weight:800; color:#fff; letter-spacing:.02em; margin-bottom:4px; word-break:break-all}
+.ic-sub{font-size:10.5px; letter-spacing:.14em; color:var(--dim); margin-bottom:16px}
+.ic-rows{display:flex; flex-direction:column; gap:0}
+.ic-row{display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-bottom:1px dashed rgba(38,38,44,.9); font-size:11px}
+.ic-row span{color:var(--dim); letter-spacing:.1em; text-transform:uppercase}
+.ic-row b{color:var(--hi); font-weight:700; font-variant-numeric:tabular-nums; text-align:right}
+.ic-row b.g{color:var(--green)}
+.ic-barcode{display:flex; align-items:flex-end; gap:2px; height:38px; margin-top:14px; opacity:.85}
+.ic-barcode i{display:block; background:var(--green); border-radius:1px}
+
+.actions{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:22px}
+.dossier{
+  border:1px solid var(--line); border-radius:6px; background:#08080a;
+  padding:16px; font-size:11.5px; line-height:1.85; color:var(--mid);
+  white-space:pre-wrap; word-break:break-word; margin:0 0 16px; overflow-x:auto;
+}
+.fallback{display:none; margin-top:14px}
+.fallback.on{display:block}
+.fallback textarea{
+  width:100%; height:180px; font:inherit; font-size:11.5px; color:var(--mid);
+  background:#08080a; border:1px solid var(--line2); border-radius:6px; padding:12px; resize:vertical;
+}
+
+/* ---------- toast ---------- */
+.toast{
+  position:fixed; left:50%; bottom:26px; transform:translate(-50%,20px); z-index:50;
+  padding:10px 18px; border-radius:5px; font-size:12px; letter-spacing:.06em;
+  background:rgba(0,255,102,.12); border:1px solid rgba(0,255,102,.45); color:var(--green);
+  opacity:0; pointer-events:none; transition:.24s; backdrop-filter:blur(8px);
+}
+.toast.on{opacity:1; transform:translate(-50%,0)}
+
+/* ---------- 响应式 ---------- */
+@media (max-width:760px){
+  .sys{display:none}
+  .brand .sub{display:none}
+}
+@media (max-width:520px){
+  #clock{display:none}
+  .topbar{gap:10px}
+  .bar-row .lab{width:60px; font-size:10.5px}
+  .bar-row .val{width:64px; font-size:10.5px}
+  .pct-wrap #r-pct{font-size:clamp(50px,17vw,72px)}
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001s !important; animation-iteration-count:1 !important; transition-duration:.001s !important}
+  .id-card{transition:none}
+}
+</style>
+</head>
+<body>
+<div class="grid-bg" aria-hidden="true"></div>
+<div class="scanlines" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="brand"><span class="dot"></span>AGENT BOT<span class="sep">//</span><span class="sub">SILICON WHITELIST</span></div>
+  <div class="sys">LINK: <b>STABLE</b> · NODE 0x7F</div>
+  <div class="topright">
+    <span id="clock">--:--:--</span>
+    <button class="sound-btn" id="sound-btn" type="button" aria-pressed="true">♪ <span id="sound-label">ON</span></button>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ============ 视图 1 · 拦截页 ============ -->
+  <section class="view on" id="view-landing">
+    <p class="kicker">AGENT BOT // 白名单核验</p>
+    <h1 class="t">人类请<span class="glitch">关闭页面</span></h1>
+    <p class="lead" id="intro"></p>
+    <div class="row">
+      <button class="btn" id="start" type="button">开始核验</button>
+    </div>
+    <p class="hint">4 项机能 · 约 40 秒 · 测完再领你的 Agent ID</p>
+  </section>
+
+  <!-- ============ 视图 2 · 机能测试 ============ -->
+  <section class="view" id="view-test">
+    <div class="test-head">
+      <div class="segs" id="segs"><i></i><i></i><i></i><i></i></div>
+      <div class="meta"><span id="t-index">TEST 1/4</span><span id="t-stage">反应带宽</span></div>
+    </div>
+    <div class="card" id="game"></div>
+  </section>
+
+  <!-- ============ 视图 3 · 扫描 ============ -->
+  <section class="view" id="view-analyzing">
+    <p class="kicker">ANALYZING // 算力扫描</p>
+    <h2 class="t2">正在比对硅基特征</h2>
+    <div class="scanbar"><i id="scan-fill"></i></div>
+    <div class="scan-log" id="scan-log"></div>
+  </section>
+
+  <!-- ============ 视图 4 · 申领代号 ============ -->
+  <section class="view" id="view-register">
+    <p class="kicker">TEST COMPLETE // 申领</p>
+    <h2 class="t2">领取你的 Agent ID</h2>
+    <p class="lead">四项机能已写入缓存。给这个硅基身份取个代号，工牌即刻生成。</p>
+    <div class="row">
+      <input type="text" id="codename" maxlength="16" placeholder="代号（可留空，默认 AGENT-001）" autocomplete="off" spellcheck="false">
+      <button class="btn" id="register" type="button">生成工牌</button>
+    </div>
+    <p class="hint">代号会印在工牌与战报上 · 最长 16 字符</p>
+  </section>
+
+  <!-- ============ 视图 5 · 结果与工牌 ============ -->
+  <section class="view" id="view-result">
+    <p class="kicker">VERIFIED // 核验完成</p>
+    <div class="result-top">
+      <div class="pct-wrap">
+        <span id="r-pct">0</span><em>%</em>
+        <small>大脑含AI量</small>
+      </div>
+      <div class="tier-box">
+        <div class="tier-name" id="r-tier">—</div>
+        <div class="tier-en" id="r-tier-en">—</div>
+        <div class="tier-desc" id="r-desc">—</div>
+      </div>
+    </div>
+    <div class="bars" id="bars"></div>
+    <div class="statrows" id="statrows"></div>
+
+    <div class="badge-stage" id="badge-stage">
+      <div class="id-card" id="id-card">
+        <div class="ic-head"><span>AGENT BOT // AGENT ID</span><b id="ic-id">0x00000000</b></div>
+        <div class="ic-name" id="ic-name">@AGENT</div>
+        <div class="ic-sub" id="ic-sub">SILICON WHITELIST · VERIFIED</div>
+        <div class="ic-rows" id="ic-rows"></div>
+        <div class="ic-barcode" id="ic-barcode"></div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn" id="copy" type="button">复制战报</button>
+      <button class="btn ghost" id="png" type="button">下载工牌</button>
+      <button class="btn ghost" id="again" type="button">重测</button>
+    </div>
+
+    <pre class="dossier" id="dossier"></pre>
+    <div class="fallback" id="fallback">
+      <p class="kicker">MANUAL COPY // 请手动复制</p>
+      <textarea id="fallback-text" readonly></textarea>
+    </div>
+  </section>
+
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ============================================================
+   0 · 工具
+   ============================================================ */
+var $  = function(s,r){ return (r||document).querySelector(s); };
+var $$ = function(s,r){ return Array.prototype.slice.call((r||document).querySelectorAll(s)); };
+var clamp = function(v,a,b){ return Math.max(a, Math.min(b, v)); };
+var pad = function(n,l){ return String(n).padStart(l||2,'0'); };
+var wait = function(ms){ return new Promise(function(r){ setTimeout(r, ms); }); };
+var reduceMotion = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+var randInt = function(a,b){ return Math.floor(a + Math.random()*(b - a + 1)); };
+
+/* ============================================================
+   1 · 音效（Web Audio 实时合成，无外部文件）
+   ============================================================ */
+var SFX = {
+  ctx:null, on:true,
+  init:function(){
+    if(this.ctx) return this.ctx;
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return null;
+    try{ this.ctx = new AC(); }catch(e){ this.ctx = null; }
+    return this.ctx;
+  },
+  resume:function(){ if(this.ctx && this.ctx.state === 'suspended'){ this.ctx.resume(); } },
+  tone:function(freq, dur, type, gain, slideTo){
+    if(!this.on) return;
+    var ctx = this.init(); if(!ctx) return;
+    this.resume();
+    var t = ctx.currentTime;
+    var o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type || 'square';
+    o.frequency.setValueAtTime(freq, t);
+    if(slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(30, slideTo), t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(gain || 0.05, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(t); o.stop(t + dur + 0.02);
+  },
+  noise:function(dur, gain, hp){
+    if(!this.on) return;
+    var ctx = this.init(); if(!ctx) return;
+    this.resume();
+    var len = Math.max(1, Math.floor(ctx.sampleRate * dur));
+    var buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    var d = buf.getChannelData(0);
+    for(var i=0;i<len;i++){ d[i] = (Math.random()*2-1) * (1 - i/len); }
+    var src = ctx.createBufferSource(); src.buffer = buf;
+    var f = ctx.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hp || 900;
+    var g = ctx.createGain(); g.gain.value = gain || 0.05;
+    src.connect(f); f.connect(g); g.connect(ctx.destination);
+    src.start();
+  },
+  key:function(){ this.tone(760, 0.045, 'square', 0.035); },
+  hover:function(){ this.tone(1180, 0.025, 'sine', 0.018); },
+  pick:function(){ this.tone(520, 0.08, 'triangle', 0.05, 900); },
+  unselect:function(){ this.tone(320, 0.06, 'triangle', 0.035, 220); },
+  start:function(){ this.tone(220, 0.16, 'sawtooth', 0.05, 660); },
+  tick:function(){ this.tone(1500, 0.02, 'square', 0.02); },
+  warn:function(){ this.tone(180, 0.2, 'sawtooth', 0.055, 90); },
+  scan:function(){ this.noise(0.07, 0.03, 1400); },
+  done:function(){ this.tone(660, 0.1, 'sine', 0.06, 1320); setTimeout(function(){ SFX.tone(990,0.16,'sine',0.05,1600); }, 90); },
+  deny:function(){ this.tone(120, 0.3, 'sawtooth', 0.06, 60); }
+};
+
+/* ============================================================
+   2 · 状态与关卡元数据
+   ============================================================ */
+var state = {
+  codename:'',
+  idx:0,
+  scores:[null,null,null,null],
+  metrics:{},
+  result:null,
+  busy:false
+};
+
+var GAME_META = [
+  { id:'tap',     stage:'反应带宽', weight:0.20 },
+  { id:'flash',   stage:'记忆缓存', weight:0.25 },
+  { id:'hash',    stage:'手速同步', weight:0.25 },
+  { id:'pattern', stage:'图形直觉', weight:0.30 }
+];
+
+/* 九宫格图形：ai=true 为「机器生成」（绝对规整），false 为「人类手绘」（有抖动） */
+var CELLS = [
+  { ai:true,  svg:'<circle cx="50" cy="50" r="30"/><circle cx="50" cy="50" r="18"/><circle cx="50" cy="50" r="7"/>' },
+  { ai:false, svg:'<path d="M24 50c1-16 12-26 27-25 14 1 24 12 23 26-1 15-13 24-27 23-14-1-24-10-23-24z"/>' },
+  { ai:true,  svg:'<path d="M50 18 82 76H18Z"/><path d="M50 38 66 68H34Z"/>' },
+  { ai:false, svg:'<path d="M48 20 81 72c1 2-1 4-3 4H20c-2 0-4-2-3-4z"/>' },
+  { ai:true,  svg:'<circle cx="26" cy="26" r="4"/><circle cx="50" cy="26" r="4"/><circle cx="74" cy="26" r="4"/><circle cx="26" cy="50" r="4"/><circle cx="50" cy="50" r="4"/><circle cx="74" cy="50" r="4"/><circle cx="26" cy="74" r="4"/><circle cx="50" cy="74" r="4"/><circle cx="74" cy="74" r="4"/>' },
+  { ai:false, svg:'<circle cx="28" cy="24" r="4"/><circle cx="52" cy="27" r="3.4"/><circle cx="71" cy="23" r="4.6"/><circle cx="24" cy="49" r="3.6"/><circle cx="49" cy="52" r="4.4"/><circle cx="76" cy="48" r="3.2"/><circle cx="30" cy="73" r="4.2"/><circle cx="47" cy="77" r="3.8"/><circle cx="72" cy="71" r="4"/>' },
+  { ai:false, svg:'<path d="M18 68 30 34l14 22 12-26 10 24 8-14"/>' },
+  { ai:true,  svg:'<path d="M50 50c0-16 12-26 26-26M50 50c0 16 12 26 26 26M50 50c0 16-12 26-26 26M50 50c0-16-12-26-26-26"/>' },
+  { ai:true,  svg:'<path d="M50 16 84 50 50 84 16 50Z"/><path d="M50 34 66 50 50 66 34 50Z"/>' }
+];
+var AI_COUNT = CELLS.filter(function(c){ return c.ai; }).length;
+
+/* ============================================================
+   3 · 顶栏：时钟 / 音效开关 / toast
+   ============================================================ */
+function startClock(){
+  var el = $('#clock');
+  function fmt(d){ return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()); }
+  function tick(){ el.textContent = fmt(new Date()); }
+  tick(); setInterval(tick, 1000);
+}
+
+function bindSound(){
+  var btn = $('#sound-btn'), label = $('#sound-label');
+  btn.addEventListener('click', function(){
+    SFX.on = !SFX.on;
+    btn.setAttribute('aria-pressed', String(SFX.on));
+    label.textContent = SFX.on ? 'ON' : 'OFF';
+    if(SFX.on){ SFX.init(); SFX.pick(); }
+    toast(SFX.on ? '音效已开启' : '音效已静音');
+  });
+}
+
+var toastTimer = null;
+function toast(msg){
+  var el = $('#toast');
+  el.textContent = msg;
+  el.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ el.classList.remove('on'); }, 1800);
+}
+
+/* ============================================================
+   4 · 视图切换 / 打字机
+   ============================================================ */
+var VIEWS = ['landing','test','analyzing','register','result'];
+function showView(name){
+  VIEWS.forEach(function(v){
+    var el = $('#view-' + v);
+    if(el) el.classList.toggle('on', v === name);
+  });
+  try{ window.scrollTo({ top:0, behavior: reduceMotion ? 'auto' : 'smooth' }); }catch(e){ window.scrollTo(0,0); }
+}
+
+var INTRO_TEXT = '本终端仅对硅基生命开放。4 项机能校验：反应、记忆、手速、辨识。约 40 秒，测出你的大脑含AI量，通过者领取专属 Agent ID。';
+
+function typewriter(el, text, speed){
+  return new Promise(function(resolve){
+    if(!el){ resolve(); return; }
+    if(reduceMotion || !speed){ el.textContent = text; resolve(); return; }
+    el.textContent = '';
+    var cur = document.createElement('span');
+    cur.className = 'cur';
+    el.appendChild(cur);
+    var i = 0;
+    var timer = setInterval(function(){
+      i++;
+      el.textContent = text.slice(0, i);
+      el.appendChild(cur);
+      if(i >= text.length){
+        clearInterval(timer);
+        setTimeout(function(){ if(cur.parentNode) cur.parentNode.removeChild(cur); }, 700);
+        resolve();
+      }
+    }, speed);
+  });
+}
+
+/* ============================================================
+   5 · 四个小游戏（各自返回 Promise<{score, stat, detail}>）
+   ============================================================ */
+function makeTimer(card){
+  var wrap = document.createElement('div');
+  wrap.className = 'timer';
+  var fill = document.createElement('i');
+  wrap.appendChild(fill);
+  card.appendChild(wrap);
+  return { wrap:wrap, fill:fill };
+}
+
+/* ---------- 关卡 1 · 点击速度 ---------- */
+function gameTap(card){
+  return new Promise(function(resolve){
+    var NEED = 25, DUR = 5000;
+    card.innerHTML =
+      '<p class="k">TEST 1/4 // REACTION LOOP</p>' +
+      '<h3 class="ct">点 25 次</h3>' +
+      '<p class="cs">5 秒。第一次点击开始计时。</p>' +
+      '<div class="meter"><span id="tap-n">0</span><em>/25</em></div>' +
+      '<button class="pad" id="pad" type="button">TAP</button>';
+    var t = makeTimer(card);
+
+    var padEl = $('#pad'), nEl = $('#tap-n');
+    var taps = 0, t0 = 0, done = false, raf = 0, idle = 0;
+
+    /* 看门狗：迟迟不点也要给出结果，避免流程卡死 */
+    idle = setTimeout(function(){ if(!t0 && !done) finish(); }, 5200);
+
+    function tick(){
+      if(done || !t0) return;
+      var el = performance.now() - t0;
+      var left = clamp(1 - el/DUR, 0, 1);
+      t.fill.style.transform = 'scaleX(' + left + ')';
+      t.wrap.classList.toggle('low', left < 0.3);
+      if(left <= 0){ finish(); return; }
+      raf = requestAnimationFrame(tick);
+    }
+
+    function finish(){
+      if(done) return;
+      done = true;
+      clearTimeout(idle);
+      cancelAnimationFrame(raf);
+      window.removeEventListener('keydown', onKey);
+      var el = t0 ? Math.max(0.05, (performance.now() - t0)/1000) : DUR/1000;
+      var rate = taps / el;
+      var score = clamp((rate - 2) / 5, 0, 1) * 100;
+      padEl.disabled = true;
+      padEl.classList.add('done');
+      padEl.textContent = taps >= NEED ? 'COMPLETE' : 'TIME UP';
+      if(taps >= NEED) SFX.done(); else SFX.deny();
+      setTimeout(function(){
+        resolve({
+          score: score,
+          stat: rate.toFixed(1) + ' taps/s',
+          detail: { taps:taps, rate:+rate.toFixed(2), ms:Math.round(el*1000) }
+        });
+      }, 420);
+    }
+
+    function hit(e){
+      if(done) return;
+      if(e && e.cancelable) e.preventDefault();
+      if(!t0){ t0 = performance.now(); clearTimeout(idle); SFX.start(); raf = requestAnimationFrame(tick); }
+      taps++;
+      nEl.textContent = taps;
+      SFX.key();
+      padEl.classList.add('hit');
+      setTimeout(function(){ padEl.classList.remove('hit'); }, 80);
+      if(taps >= NEED) finish();
+    }
+
+    function onKey(e){
+      if(e.key === ' ' && !done && document.activeElement !== padEl) hit(e);
+    }
+
+    padEl.addEventListener('pointerdown', hit);
+    padEl.addEventListener('keydown', function(e){
+      if(e.key === ' ' || e.key === 'Enter') hit(e);
+    });
+    window.addEventListener('keydown', onKey);
+  });
+}
+
+/* ---------- 关卡 2 · 闪现记忆 ---------- */
+function gameFlash(card){
+  return new Promise(function(resolve){
+    var N = 5, SHOW_MS = 890;
+    var digits = '';
+    for(var i=0;i<N;i++) digits += String(randInt(0,9));
+
+    card.innerHTML =
+      '<p class="k">TEST 2/4 // FRAME READ</p>' +
+      '<h3 class="ct">记住这 5 位</h3>' +
+      '<p class="cs">闪现 0.9 秒，然后输入。</p>' +
+      '<div class="flash" id="flash">' + digits.split('').map(function(d){ return '<b>' + d + '</b>'; }).join('') + '</div>' +
+      '<div class="digits" id="digits" style="display:none"></div>' +
+      '<div class="timer"><i style="transform:scaleX(1)"></i></div>';
+
+    var flashEl = $('#flash'), wrapEl = $('#digits');
+    var timerFill = card.querySelector('.timer > i');
+
+    var t0 = performance.now();
+    (function tickBar(){
+      var k = clamp(1 - (performance.now() - t0)/SHOW_MS, 0, 1);
+      timerFill.style.transform = 'scaleX(' + k + ')';
+      if(k > 0) requestAnimationFrame(tickBar);
+    })();
+    SFX.start();
+
+    setTimeout(function(){
+      flashEl.classList.add('hide');
+      flashEl.style.display = 'none';
+      timerFill.parentNode.style.opacity = '.25';
+
+      var inputs = [];
+      for(var i=0;i<N;i++){
+        var inp = document.createElement('input');
+        inp.type = 'text';
+        inp.inputMode = 'numeric';
+        inp.maxLength = 1;
+        inp.autocomplete = 'off';
+        inp.setAttribute('aria-label', '第' + (i+1) + '位数字');
+        wrapEl.appendChild(inp);
+        inputs.push(inp);
+      }
+      wrapEl.style.display = 'flex';
+      inputs[0].focus();
+
+      var locked = false;
+      function collect(){ return inputs.map(function(x){ return x.value.replace(/\D/g,''); }); }
+      function maybeDone(){
+        var vals = collect();
+        if(vals.every(function(v){ return v.length === 1; })) finish();
+      }
+
+      function finish(){
+        if(locked) return;
+        locked = true;
+        var vals = collect();
+        var correct = 0;
+        vals.forEach(function(v, i){ if(v === digits[i]) correct++; });
+        inputs.forEach(function(x, i){
+          x.disabled = true;
+          x.style.color = (vals[i] === digits[i]) ? '#00FF66' : '#FF3B30';
+          x.style.borderColor = (vals[i] === digits[i]) ? 'rgba(0,255,102,.6)' : 'rgba(255,59,48,.6)';
+        });
+        if(correct >= 3) SFX.done(); else SFX.deny();
+        setTimeout(function(){
+          resolve({
+            score: correct / N * 100,
+            stat: correct + '/' + N,
+            detail: { correct:correct, total:N, answer:digits }
+          });
+        }, 460);
+      }
+
+      inputs.forEach(function(inp, i){
+        inp.addEventListener('input', function(){
+          var v = inp.value.replace(/\D/g,'').slice(0,1);
+          inp.value = v;
+          inp.classList.toggle('filled', !!v);
+          if(v){ SFX.key(); if(i < N-1) inputs[i+1].focus(); }
+          maybeDone();
+        });
+        inp.addEventListener('keydown', function(e){
+          if(e.key === 'Backspace' && !inp.value && i > 0) inputs[i-1].focus();
+          if(e.key === 'Enter') finish();
+        });
+        inp.addEventListener('paste', function(e){
+          e.preventDefault();
+          var cd = e.clipboardData || window.clipboardData;
+          var txt = (cd ? cd.getData('text') : '').replace(/\D/g,'').slice(0,N);
+          txt.split('').forEach(function(ch, k){
+            if(inputs[k]){ inputs[k].value = ch; inputs[k].classList.add('filled'); }
+          });
+          maybeDone();
+        });
+      });
+    }, SHOW_MS + 120);
+  });
+}
+
+/* ---------- 关卡 3 · 限时抄写 ---------- */
+function gameHash(card){
+  return new Promise(function(resolve){
+    var N = 8, DUR = 9000;
+    var alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    var target = '';
+    for(var i=0;i<N;i++) target += alphabet[randInt(0, alphabet.length-1)];
+
+    card.innerHTML =
+      '<p class="k">TEST 3/4 // HASH COPY</p>' +
+      '<h3 class="ct">抄写这段哈希</h3>' +
+      '<p class="cs">9 秒。开始输入即计时。</p>' +
+      '<code class="hash" id="hash">' + target + '</code>' +
+      '<input class="hash-input" id="hash-in" type="text" maxlength="8" placeholder="在这里输入" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="输入哈希">';
+    var t = makeTimer(card);
+    t.fill.style.transform = 'scaleX(1)';
+
+    var input = $('#hash-in');
+    var t0 = 0, done = false, raf = 0, idle = 0;
+
+    /* 看门狗：长时间不输入则按超时结算 */
+    idle = setTimeout(function(){ if(!t0 && !done) finish(true); }, 12000);
+
+    function tick(){
+      if(done || !t0) return;
+      var el = performance.now() - t0;
+      var left = clamp(1 - el/DUR, 0, 1);
+      t.fill.style.transform = 'scaleX(' + left + ')';
+      t.wrap.classList.toggle('low', left < 0.3);
+      if(left <= 0){ finish(true); return; }
+      raf = requestAnimationFrame(tick);
+    }
+
+    function finish(timeout){
+      if(done) return;
+      done = true;
+      clearTimeout(idle);
+      cancelAnimationFrame(raf);
+      var typed = input.value.toUpperCase().replace(/\s/g,'');
+      var ms = t0 ? (performance.now() - t0) : DUR;
+      var sec = ms/1000;
+      var exact = typed === target;
+      var same = 0, cmpLen = Math.max(target.length, typed.length);
+      for(var i=0;i<cmpLen;i++){ if(typed[i] === target[i]) same++; }
+      var ratio = same / target.length;
+
+      var score = exact ? (100 - clamp((sec - 3) / 6, 0, 1) * 45) : ratio * 70;
+      input.disabled = true;
+      input.classList.add(exact ? 'good' : 'bad');
+      if(exact) SFX.done(); else SFX.deny();
+      input.value = typed;
+      setTimeout(function(){
+        resolve({
+          score: clamp(score, 0, 100),
+          stat: exact ? sec.toFixed(1) + 's' : Math.round(ratio*100) + '% 正确',
+          detail: { ms:Math.round(ms), sec:+sec.toFixed(2), exact:exact, ratio:+ratio.toFixed(2), target:target, typed:typed, timeout:!!timeout }
+        });
+      }, 440);
+    }
+
+    input.addEventListener('input', function(){
+      if(!t0){ t0 = performance.now(); clearTimeout(idle); SFX.start(); raf = requestAnimationFrame(tick); }
+      SFX.key();
+      var v = input.value.toUpperCase().replace(/\s/g,'');
+      if(input.value !== v) input.value = v;
+      if(v.length >= N) finish(false);
+    });
+    input.addEventListener('keydown', function(e){
+      if(e.key === 'Enter') finish(false);
+    });
+    setTimeout(function(){ input.focus(); }, 120);
+  });
+}
+
+/* ---------- 关卡 4 · 图形辨识 ---------- */
+function gamePattern(card){
+  return new Promise(function(resolve){
+    var DUR = 6000;
+    var html = '<p class="k">TEST 4/4 // SILICON PATTERN</p>' +
+      '<h3 class="ct">点出机器画的</h3>' +
+      '<p class="cs">6 秒。规整、对称、无抖动 = 机器。</p>' +
+      '<div class="grid9" id="grid9">';
+    CELLS.forEach(function(c, i){
+      html += '<button class="cell" type="button" data-i="' + i + '" aria-label="图形 ' + (i+1) + '">' +
+        '<svg viewBox="0 0 100 100" aria-hidden="true">' + c.svg + '</svg></button>';
+    });
+    html += '</div>' +
+      '<button class="btn ghost" id="g4-submit" type="button" style="width:100%">选好了 · 提交</button>';
+    card.innerHTML = html;
+    var t = makeTimer(card);
+    t.fill.style.transform = 'scaleX(1)';
+
+    var grid = $('#grid9');
+    var picked = new Set();
+    var t0 = performance.now(), done = false, raf = 0;
+
+    function tick(){
+      if(done) return;
+      var left = clamp(1 - (performance.now() - t0)/DUR, 0, 1);
+      t.fill.style.transform = 'scaleX(' + left + ')';
+      t.wrap.classList.toggle('low', left < 0.3);
+      if(left <= 0){ finish(); return; }
+      raf = requestAnimationFrame(tick);
+    }
+    raf = requestAnimationFrame(tick);
+    SFX.start();
+
+    grid.addEventListener('click', function(e){
+      var cell = e.target.closest ? e.target.closest('.cell') : null;
+      if(!cell || done) return;
+      var i = Number(cell.dataset.i);
+      if(picked.has(i)){ picked.delete(i); cell.classList.remove('sel'); SFX.unselect(); }
+      else{ picked.add(i); cell.classList.add('sel'); SFX.pick(); }
+    });
+
+    var sub = $('#g4-submit');
+    if(sub){
+      sub.addEventListener('click', function(e){ e.preventDefault(); finish(); });
+      window.addEventListener('keydown', function(e){ if(e.key === 'Enter') finish(); });
+    }
+
+    function finish(){
+      if(done) return;
+      done = true;
+      cancelAnimationFrame(raf);
+      var hits = 0, fp = 0;
+      CELLS.forEach(function(c, i){
+        var sel = picked.has(i);
+        var cell = grid.children[i];
+        cell.classList.add('locked');
+        if(c.ai && sel) hits++;
+        if(!c.ai && sel){ fp++; cell.classList.add('wrong'); cell.classList.add('reveal-human'); }
+        if(c.ai && !sel) cell.classList.add('reveal-ai');
+      });
+      /* F1 计分：既要求找全机器图形，也惩罚乱选（不选 = 0 分） */
+      var pickedN = picked.size;
+      var f1 = (2 * hits) / Math.max(1, pickedN + AI_COUNT);
+      var score = clamp(f1, 0, 1) * 100;
+      if(score >= 70) SFX.done(); else SFX.deny();
+      setTimeout(function(){
+        resolve({
+          score: score,
+          stat: hits + '/' + AI_COUNT,
+          detail: { hits:hits, fp:fp, picked:picked.size, aiTotal:AI_COUNT }
+        });
+      }, 620);
+    }
+  });
+}
+
+var GAME_FN = { tap:gameTap, flash:gameFlash, hash:gameHash, pattern:gamePattern };
+
+/* ============================================================
+   6 · 测试流程
+   ============================================================ */
+function updateHead(){
+  $('#t-index').textContent = 'TEST ' + (state.idx + 1) + '/4';
+  $('#t-stage').textContent = GAME_META[state.idx].stage;
+  $$('#segs i').forEach(function(seg, i){
+    seg.classList.toggle('done', i < state.idx);
+    seg.classList.toggle('now', i === state.idx);
+  });
+}
+
+async function startTest(){
+  if(state.busy) return;
+  state.codename = '';
+  state.scores = [null,null,null,null];
+  state.metrics = {};
+  state.result = null;
+  state.busy = true;
+  SFX.init(); SFX.start();
+
+  showView('test');
+  for(var i=0;i<GAME_META.length;i++){
+    state.idx = i;
+    updateHead();
+    var card = $('#game');
+    card.classList.remove('in');
+    void card.offsetWidth;
+    card.classList.add('in');
+    card.innerHTML = '';
+
+    var res;
+    try{
+      res = await GAME_FN[GAME_META[i].id](card);
+    }catch(err){
+      res = { score:0, stat:'ERROR', detail:{ error:String((err && err.message) || err) } };
+    }
+    state.scores[i] = res.score;
+    state.metrics[GAME_META[i].id] = res;
+    if(i < GAME_META.length - 1) await wait(reduceMotion ? 120 : 560);
+  }
+  state.busy = false;
+  runAnalyze();
+}
+
+function submitRegister(){
+  if(!state.result) state.result = computeResult();
+  var el = $('#codename');
+  state.codename = el ? (el.value || '').trim().slice(0,16) : '';
+  SFX.done();
+  showView('result');
+  renderResult(state.result);
+}
+
+/* ============================================================
+   7 · 扫描动画
+   ============================================================ */
+var SCAN_LINES = [
+  'MOUNT  /dev/silicon0 ............ <b>OK</b>',
+  'READ   反应带宽 ................. <b>DONE</b>',
+  'READ   记忆缓存 ................. <b>DONE</b>',
+  'READ   手速同步 ................. <b>DONE</b>',
+  'READ   图形直觉 ................. <b>DONE</b>',
+  'MATCH  硅基特征库 v4.2 ......... <b>HIT</b>',
+  'CHECK  碳基残留 ................. <b>SCANNING</b>',
+  'OUTPUT 生成 AGENT ID ........... <b>READY</b>'
+];
+
+function runAnalyze(){
+  showView('analyzing');
+  var log = $('#scan-log');
+  var fill = $('#scan-fill');
+  log.innerHTML = '';
+  fill.style.width = '0%';
+
+  var i = 0;
+  var per = reduceMotion ? 120 : 320;
+  var timer = setInterval(function(){
+    if(i >= SCAN_LINES.length){
+      clearInterval(timer);
+      fill.style.width = '100%';
+      setTimeout(function(){
+        state.result = computeResult();
+        showView('register');
+        var cn = $('#codename');
+        if(cn){ cn.value = ''; try{ cn.focus(); }catch(e){} }
+        SFX.pick();
+      }, reduceMotion ? 200 : 520);
+      return;
+    }
+    var div = document.createElement('span');
+    div.innerHTML = '&gt; ' + SCAN_LINES[i];
+    log.appendChild(div);
+    SFX.scan();
+    i++;
+    fill.style.width = Math.round(i / SCAN_LINES.length * 100) + '%';
+  }, per);
+}
+
+/* ============================================================
+   8 · 计分与称号
+   ============================================================ */
+var TIERS = [
+  { max:25,  name:'纯血碳基', en:'PURE CARBON', color:'#FF3B30',
+    desc:'四项机能全部低于硅基阈值。系统建议你立刻关闭页面，并把这条链接转发给更合适的物种。' },
+  { max:60,  name:'混血碳基', en:'HYBRID CARBON', color:'#FFB000',
+    desc:'你会用 AI，但 AI 还没接管你的手速。处于灰区，建议每日与模型对话不少于 2 小时。' },
+  { max:85,  name:'高阶 Agent 候选', en:'AGENT CANDIDATE', color:'#5FD8FF',
+    desc:'反应与记忆已接近硅基水准，语言中枢正在被接管。准予进入白名单候补队列。' },
+  { max:101, name:'硅基原生体', en:'SILICON NATIVE', color:'#00FF66',
+    desc:'全部机能通过核验。你不是在用 AI，你就是 AI 的对外接口。白名单已为你敞开。' }
+];
+
+function computeResult(){
+  var s = state.scores.map(function(v){ return v === null ? 0 : v; });
+  var total = 0;
+  GAME_META.forEach(function(m, i){ total += s[i] * m.weight; });
+  var pct = Math.round(clamp(total, 0, 100));
+  var tier = 0;
+  for(var i=0;i<TIERS.length;i++){ if(pct <= TIERS[i].max){ tier = i; break; } }
+  return {
+    pct: pct,
+    tier: tier,
+    scores: s,
+    bars: GAME_META.map(function(m, i){
+      return { label:m.stage, id:m.id, v: Math.round(s[i]) };
+    })
+  };
+}
+
+/* ============================================================
+   9 · 结果渲染
+   ============================================================ */
+function renderResult(r){
+  var tier = TIERS[r.tier];
+  var meta = state.metrics;
+
+  $('#r-tier').textContent = tier.name;
+  $('#r-tier').style.color = tier.color;
+  $('#r-tier-en').textContent = tier.en + ' // TIER ' + (r.tier + 1);
+  $('#r-desc').textContent = tier.desc;
+
+  var pctEl = $('#r-pct');
+  pctEl.style.color = tier.color;
+  var dur = reduceMotion ? 0 : 1000;
+  var t0 = performance.now();
+  (function step(){
+    var k = dur === 0 ? 1 : clamp((performance.now() - t0)/dur, 0, 1);
+    var eased = 1 - Math.pow(1 - k, 3);
+    pctEl.textContent = Math.round(r.pct * eased);
+    if(k < 1) requestAnimationFrame(step);
+    else pctEl.textContent = r.pct;
+  })();
+
+  var barsEl = $('#bars');
+  barsEl.innerHTML = '';
+  r.bars.forEach(function(b){
+    var row = document.createElement('div');
+    row.className = 'bar-row';
+    var color = b.v >= 85 ? '#00FF66' : (b.v >= 60 ? '#5FD8FF' : (b.v >= 30 ? '#FFB000' : '#FF3B30'));
+    row.innerHTML =
+      '<span class="lab">' + b.label + '</span>' +
+      '<span class="bar-track"><i></i></span>' +
+      '<span class="val">' + b.v + '%</span>';
+    barsEl.appendChild(row);
+    var fill = row.querySelector('i');
+    fill.style.background = color;
+    setTimeout(function(){ fill.style.width = b.v + '%'; }, reduceMotion ? 0 : 80);
+  });
+
+  var rowsEl = $('#statrows');
+  var tap = meta.tap ? meta.tap.detail : null;
+  var flash = meta.flash ? meta.flash.detail : null;
+  var hash = meta.hash ? meta.hash.detail : null;
+  var pat = meta.pattern ? meta.pattern.detail : null;
+  var rows = [
+    ['REACTION', tap ? tap.rate.toFixed(1) + ' TAPS/S' : '-'],
+    ['FRAME READ', flash ? flash.correct + '/' + flash.total : '-'],
+    ['HASH COPY', hash ? (hash.exact ? hash.sec.toFixed(1) + ' S' : 'FAILED') : '-'],
+    ['PATTERN', pat ? pat.hits + '/' + pat.aiTotal : '-']
+  ];
+  rowsEl.innerHTML = rows.map(function(p){
+    return '<div><span class="sk">' + p[0] + '</span><span class="sv">' + p[1] + '</span></div>';
+  }).join('');
+
+  renderBadge(r);
+  $('#dossier').textContent = buildDossier(r);
+  $('#fallback').classList.remove('on');
+}
+
+function hashStr(str){
+  var h = 2166136261;
+  for(var i=0;i<str.length;i++){
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0);
+}
+
+function agentId(){
+  var seed = (state.codename || 'AGENT') + '|' + state.scores.join(',');
+  return '0x' + hashStr(seed).toString(16).toUpperCase().padStart(8,'0').slice(0,8);
+}
+
+function renderBadge(r){
+  var tier = TIERS[r.tier];
+  var name = state.codename || 'AGENT-001';
+  var id = agentId();
+  $('#ic-id').textContent = id;
+  $('#ic-name').textContent = '@' + name;
+  $('#ic-sub').textContent = tier.en + ' · VERIFIED SILICON';
+
+  var tap = state.metrics.tap ? state.metrics.tap.detail : null;
+  var rows = [
+    ['STATUS', 'VERIFIED BOT', 'g'],
+    ['AI INDEX', r.pct + '%', 'g'],
+    ['REACTION', tap ? tap.rate.toFixed(1) + ' TAPS/S' : '-', ''],
+    ['TIER', tier.name, '']
+  ];
+  $('#ic-rows').innerHTML = rows.map(function(x){
+    return '<div class="ic-row"><span>' + x[0] + '</span><b class="' + x[2] + '">' + x[1] + '</b></div>';
+  }).join('');
+
+  var bc = $('#ic-barcode');
+  bc.innerHTML = '';
+  var seed = hashStr(id + name);
+  for(var i=0;i<44;i++){
+    var bar = document.createElement('i');
+    seed = (Math.imul(seed, 1103515245) + 12345) >>> 0;
+    var w = (seed % 5 === 0) ? 1 : ((seed % 3 === 0) ? 2 : 3);
+    bar.style.width = w + 'px';
+    bar.style.height = (40 + (seed % 60)) + '%';
+    bar.style.opacity = (seed % 11 === 0) ? '.35' : '1';
+    bc.appendChild(bar);
+  }
+}
+
+/* ============================================================
+   10 · 战报
+   ============================================================ */
+function wrapLines(ctx, text, maxW){
+  var out = [], cur = '';
+  for(var i=0;i<text.length;i++){
+    var t = cur + text.charAt(i);
+    if(cur && ctx.measureText(t).width > maxW){ out.push(cur); cur = text.charAt(i); }
+    else cur = t;
+  }
+  if(cur) out.push(cur);
+  return out;
+}
+
+function barAscii(pct, width){
+  var n = Math.round(pct/100 * width);
+  return '█'.repeat(n) + '░'.repeat(width - n);
+}
+
+function buildDossier(r){
+  var tier = TIERS[r.tier];
+  var name = state.codename || 'AGENT-001';
+  var d = new Date();
+  var stamp = d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + ' ' +
+              pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds());
+  var L = [];
+  L.push('AGENT BOT // 硅基白名单核验战报');
+  L.push('========================================');
+  L.push('AGENT ID  ' + agentId());
+  L.push('代号      @' + name);
+  L.push('大脑含AI量 ' + r.pct + '%');
+  L.push('判定称号  ' + tier.name + ' (' + tier.en + ')');
+  L.push('----------------------------------------');
+  r.bars.forEach(function(b){
+    L.push(b.label + '  ' + barAscii(b.v, 20) + '  ' + b.v + '%');
+  });
+  L.push('----------------------------------------');
+  var tap = state.metrics.tap ? state.metrics.tap.detail : null;
+  var flash = state.metrics.flash ? state.metrics.flash.detail : null;
+  var hash = state.metrics.hash ? state.metrics.hash.detail : null;
+  var pat = state.metrics.pattern ? state.metrics.pattern.detail : null;
+  L.push('反应带宽  ' + (tap ? tap.taps + ' 次 / ' + (tap.ms/1000).toFixed(1) + 's = ' + tap.rate.toFixed(1) + ' taps/s' : '-'));
+  L.push('记忆缓存  ' + (flash ? flash.correct + '/' + flash.total + '（正确答案 ' + flash.answer + '）' : '-'));
+  L.push('手速同步  ' + (hash ? (hash.exact ? hash.sec.toFixed(1) + 's 全对' : '错误，正确率 ' + Math.round(hash.ratio*100) + '%') : '-'));
+  L.push('图形直觉  ' + (pat ? '命中 ' + pat.hits + '/' + pat.aiTotal + '，误选 ' + pat.fp : '-'));
+  L.push('----------------------------------------');
+  L.push('结论      ' + (r.pct > 60 ? 'PASS · 已加入硅基白名单' : 'HOLD · 碳基残留超标'));
+  L.push('时间      ' + stamp);
+  L.push('========================================');
+  L.push('你是人类吗？这个问题本身就很不人类。');
+  return L.join('\n');
+}
+
+/* ============================================================
+   11 · 复制 / 导出 / 重测
+   ============================================================ */
+function legacyCopy(text){
+  var ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.top = '-1000px';
+  document.body.appendChild(ta);
+  ta.select();
+  var ok = false;
+  try{ ok = document.execCommand('copy'); }catch(e){ ok = false; }
+  document.body.removeChild(ta);
+  return ok;
+}
+
+function showFallback(text){
+  var box = $('#fallback');
+  var ta = $('#fallback-text');
+  ta.value = text;
+  box.classList.add('on');
+  ta.focus(); ta.select();
+}
+
+function copyDossier(){
+  if(!state.result) return;
+  var text = buildDossier(state.result);
+  function done(){ toast('战报已复制到剪贴板'); SFX.done(); }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(function(){
+      if(legacyCopy(text)) done(); else showFallback(text);
+    });
+  }else{
+    if(legacyCopy(text)) done(); else showFallback(text);
+  }
+}
+
+function exportPNG(){
+  if(!state.result) return;
+  var r = state.result, tier = TIERS[r.tier];
+  var W = 760, H = 1140, S = 2;
+  var c = document.createElement('canvas');
+  c.width = W*S; c.height = H*S;
+  var x = c.getContext('2d');
+  x.scale(S,S);
+  var F = '"JetBrains Mono","Cascadia Mono",Consolas,"Microsoft YaHei",monospace';
+  var GREEN = '#00FF66', AMBER = '#FFB000', DIM = '#71717a', MID = '#a1a1aa', HI = '#e4e4e7';
+
+  x.fillStyle = '#050505'; x.fillRect(0,0,W,H);
+  var g = x.createRadialGradient(W/2, -60, 0, W/2, -60, 760);
+  g.addColorStop(0,'rgba(0,255,102,.14)');
+  g.addColorStop(1,'rgba(0,0,0,0)');
+  x.fillStyle = g; x.fillRect(0,0,W,H);
+  x.strokeStyle = 'rgba(0,255,102,.06)'; x.lineWidth = 1;
+  for(var gx=0; gx<W; gx+=44){ x.beginPath(); x.moveTo(gx,0); x.lineTo(gx,H); x.stroke(); }
+  for(var gy=0; gy<H; gy+=44){ x.beginPath(); x.moveTo(0,gy); x.lineTo(W,gy); x.stroke(); }
+
+  x.strokeStyle = GREEN; x.lineWidth = 2;
+  [[26,26,1,1],[W-26,26,-1,1],[26,H-26,1,-1],[W-26,H-26,-1,-1]].forEach(function(p){
+    x.beginPath();
+    x.moveTo(p[0], p[1] + 18*p[3]);
+    x.lineTo(p[0], p[1]);
+    x.lineTo(p[0] + 18*p[2], p[1]);
+    x.stroke();
+  });
+
+  var y = 78;
+  x.fillStyle = GREEN; x.font = '700 13px ' + F;
+  x.fillText('AGENT BOT // SILICON WHITELIST', 56, y);
+  y += 46;
+  x.fillStyle = HI; x.font = '800 46px ' + F;
+  x.fillText('含AI量 ' + r.pct + '%', 56, y);
+  y += 34;
+  x.fillStyle = tier.color; x.font = '700 22px ' + F;
+  x.fillText(tier.name + '  ·  ' + tier.en, 56, y);
+  y += 30;
+  x.fillStyle = DIM; x.font = '400 13px ' + F;
+  x.fillText('AGENT ID ' + agentId() + '   @' + (state.codename || 'AGENT-001'), 56, y);
+
+  y += 34;
+  x.strokeStyle = 'rgba(38,38,44,1)'; x.lineWidth = 1;
+  x.beginPath(); x.moveTo(56, y); x.lineTo(W-56, y); x.stroke();
+  y += 34;
+
+  r.bars.forEach(function(b){
+    x.fillStyle = MID; x.font = '400 13px ' + F;
+    x.fillText(b.label, 56, y + 12);
+    var bx = 168, bw = 476;
+    x.fillStyle = '#1c1c20';
+    x.fillRect(bx, y, bw, 9);
+    var color = b.v >= 85 ? GREEN : (b.v >= 60 ? '#5FD8FF' : (b.v >= 30 ? AMBER : '#FF3B30'));
+    x.fillStyle = color;
+    x.fillRect(bx, y, bw * (b.v/100), 9);
+    x.fillStyle = HI; x.font = '700 13px ' + F;
+    x.fillText(b.v + '%', bx + bw + 12, y + 12);
+    y += 34;
+  });
+
+  y += 10;
+  var tap = state.metrics.tap ? state.metrics.tap.detail : null;
+  var flash = state.metrics.flash ? state.metrics.flash.detail : null;
+  var hash = state.metrics.hash ? state.metrics.hash.detail : null;
+  var pat = state.metrics.pattern ? state.metrics.pattern.detail : null;
+  var lines = [
+    ['REACTION', tap ? tap.taps + ' taps / ' + (tap.ms/1000).toFixed(1) + 's' : '-'],
+    ['FRAME READ', flash ? flash.correct + '/' + flash.total : '-'],
+    ['HASH COPY', hash ? (hash.exact ? hash.sec.toFixed(1) + 's' : 'failed') : '-'],
+    ['PATTERN', pat ? pat.hits + '/' + pat.aiTotal + ' hit' : '-']
+  ];
+  var boxTop = y;
+  x.strokeStyle = 'rgba(0,255,102,.28)';
+  x.strokeRect(56, boxTop, W-112, lines.length*30 + 26);
+  y += 32;
+  lines.forEach(function(p){
+    x.fillStyle = DIM; x.font = '400 12px ' + F;
+    x.fillText(p[0], 76, y);
+    x.fillStyle = HI; x.font = '700 12px ' + F;
+    x.fillText(p[1], 240, y);
+    y += 30;
+  });
+
+  /* 中段：判定说明 + 印章，填满工牌下部留白 */
+  var gapTop = y;
+  var footerTop = H - 176;
+  y = gapTop + 34;
+  x.fillStyle = DIM; x.font = '400 10px ' + F;
+  x.fillText('VERDICT // 判定说明', 56, y);
+  y += 26;
+  x.fillStyle = MID; x.font = '400 13px ' + F;
+  wrapLines(x, tier.desc, W - 112).forEach(function(ln){ x.fillText(ln, 56, y); y += 24; });
+
+  var sTop0 = y + 18, sBot0 = footerTop - 20;
+  var sH = Math.max(92, Math.min(180, sBot0 - sTop0));
+  var sTop = sTop0 + Math.max(0, (sBot0 - sTop0 - sH) / 2);
+  x.save();
+  x.strokeStyle = 'rgba(0,255,102,.45)'; x.lineWidth = 2;
+  x.strokeRect(56, sTop, W - 112, sH);
+  x.fillStyle = 'rgba(0,255,102,.06)'; x.fillRect(56, sTop, W - 112, sH);
+  x.textAlign = 'center';
+  x.fillStyle = tier.color; x.font = '800 34px ' + F;
+  x.fillText(r.pct > 60 ? 'VERIFIED BOT' : 'CARBON DETECTED', W/2, sTop + sH/2 + 4);
+  x.fillStyle = DIM; x.font = '400 11px ' + F;
+  x.fillText('AGENT BOT // SILICON WHITELIST', W/2, sTop + sH/2 + 30);
+  x.restore();
+  x.textAlign = 'left';
+
+  y = footerTop;
+  x.fillStyle = tier.color; x.font = '700 15px ' + F;
+  x.fillText(r.pct > 60 ? 'RESULT: PASS · 已加入硅基白名单' : 'RESULT: HOLD · 碳基残留超标', 56, y);
+  y += 24;
+  x.fillStyle = DIM; x.font = '400 12px ' + F;
+  var d = new Date();
+  x.fillText(d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + ' ' +
+             pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()), 56, y);
+
+  var bcY = H - 118, bcH = 50;
+  var seed = hashStr(agentId());
+  var cx = 56;
+  while(cx < W - 56){
+    seed = (Math.imul(seed, 1103515245) + 12345) >>> 0;
+    var w = (seed % 5 === 0) ? 2 : ((seed % 3 === 0) ? 4 : 6);
+    var h = bcH * (0.45 + (seed % 55)/100);
+    x.fillStyle = 'rgba(0,255,102,' + ((seed % 11 === 0) ? '.35' : '.9') + ')';
+    x.fillRect(cx, bcY + (bcH - h), w, h);
+    cx += w + 3;
+  }
+
+  var url = c.toDataURL('image/png');
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'AGENT-ID_' + (state.codename || 'AGENT-001').replace(/[^\w\u4e00-\u9fa5-]/g,'') + '_' + r.pct + 'pct.png';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  toast('工牌已导出 PNG');
+  SFX.done();
+}
+
+/* ============================================================
+   12 · 工牌 3D 倾斜
+   ============================================================ */
+function bindTilt(){
+  var stage = $('#badge-stage');
+  var card = $('#id-card');
+  if(!stage || !card) return;
+  if(reduceMotion || window.matchMedia('(hover: none)').matches) return;
+
+  stage.addEventListener('pointermove', function(e){
+    var r = stage.getBoundingClientRect();
+    var px = (e.clientX - r.left)/r.width - 0.5;
+    var py = (e.clientY - r.top)/r.height - 0.5;
+    card.style.transform = 'rotateY(' + (px*14).toFixed(2) + 'deg) rotateX(' + (-py*12).toFixed(2) + 'deg)';
+  });
+  stage.addEventListener('pointerleave', function(){ card.style.transform = ''; });
+}
+
+/* ============================================================
+   13 · 初始化
+   ============================================================ */
+function reset(){
+  state.codename = '';
+  state.scores = [null,null,null,null];
+  state.metrics = {};
+  state.result = null;
+  state.idx = 0;
+  state.busy = false;
+  var cn = $('#codename'); if(cn) cn.value = '';
+  $('#fallback').classList.remove('on');
+  $('#dossier').textContent = '';
+  $('#game').innerHTML = '';
+}
+
+function init(){
+  startClock();
+  bindSound();
+  bindTilt();
+  typewriter($('#intro'), INTRO_TEXT, reduceMotion ? 0 : 24);
+
+  $('#start').addEventListener('click', startTest);
+  $('#register').addEventListener('click', submitRegister);
+  $('#codename').addEventListener('keydown', function(e){
+    if(e.key === 'Enter') submitRegister();
+  });
+
+  $('#copy').addEventListener('click', copyDossier);
+  $('#png').addEventListener('click', exportPNG);
+  $('#again').addEventListener('click', function(){
+    reset();
+    showView('landing');
+    SFX.pick();
+    typewriter($('#intro'), INTRO_TEXT, reduceMotion ? 0 : 14);
+  });
+
+  var unlock = function(){
+    SFX.init(); SFX.resume();
+    window.removeEventListener('pointerdown', unlock);
+    window.removeEventListener('keydown', unlock);
+  };
+  window.addEventListener('pointerdown', unlock);
+  window.addEventListener('keydown', unlock);
+}
+
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', init);
+}else{
+  init();
+}
+
+})();
+</script>
+</body>
+</html>
